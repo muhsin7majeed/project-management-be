@@ -34,12 +34,12 @@ const ProjectType = new GraphQLObjectType({
     description: {
       type: GraphQLString,
     },
-    // client: {
-    //   type: ClientType,
-    //   resolve(parent, args) {
-    //     return DUMMY_DATA_CLIENTS.find((client) => client.id === parent.clientId);
-    //   },
-    // },
+    client: {
+      type: ClientType,
+      resolve(parent, args) {
+        return DUMMY_DATA_CLIENTS.find((client) => client.id === parent.clientId);
+      },
+    },
   }),
 });
 
