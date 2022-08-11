@@ -88,6 +88,17 @@ const RootQuery = new GraphQLObjectType({
   }),
 });
 
+const RootMutation = new GraphQLObjectType({
+  name: "RootMutation",
+  fields: {
+    createProject: async (_, body) => {
+      console.log(body);
+      return body;
+    },
+  },
+});
+
 module.exports = new GraphQLSchema({
   query: RootQuery,
+  mutation: RootMutation,
 });

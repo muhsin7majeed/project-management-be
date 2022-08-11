@@ -1,4 +1,4 @@
-const { Schema, model } = require("mongoose");
+const { Schema, model, Buffer } = require("mongoose");
 
 const ClientSchema = new Schema({
   name: {
@@ -6,6 +6,10 @@ const ClientSchema = new Schema({
   },
   email: {
     type: String,
+  },
+  avatar: {
+    type: String,
+    data: Buffer,
   },
 });
 
