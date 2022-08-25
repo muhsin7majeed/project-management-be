@@ -128,7 +128,7 @@ const RootMutation = new GraphQLObjectType({
 
         const data = await Project.create(args);
 
-        return { ...data };
+        return data;
       },
     },
 
