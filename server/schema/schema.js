@@ -115,14 +115,16 @@ const RootMutation = new GraphQLObjectType({
       },
 
       async resolve(parent, args) {
-        const existingProject = (await Project.find({ name: args.name }).exec())[0];
+        const existingProject = await Project.find({ name: args.name }).exec();
         const client = await Client.findById(args.clientId);
 
-        if (client._id.equals(existingProject?.clientId)) {
-          throw new Error(
-            `A project called '${args.name}' already exist for ${client.name}, please try a different name`
-          );
-        }
+        existingProject?.forEach((project) => {
+          if (project.clientId.equals(client.id)) {
+            throw new Error(
+              `A project called '${args.name}' already exist for ${client.name}, please try a different name`
+            );
+          }
+        });
 
         const data = await Project.create(args);
 
@@ -170,6 +172,7 @@ const RootMutation = new GraphQLObjectType({
       },
 
       async resolve(_parent, args) {
+        console.log(args);
         const existingProject = await Project.find({ name: args.name }).exec();
 
         if (existingProject?.length) {
