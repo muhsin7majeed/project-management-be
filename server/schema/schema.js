@@ -1,8 +1,8 @@
-const { DUMMY_DATA_CLIENTS, DUMMY_DATA_PROJECTS } = require("../DUMMY_DATA/data");
 const { GraphQLObjectType, GraphQLID, GraphQLString, GraphQLSchema, GraphQLList, GraphQLNonNull } = require("graphql");
 const { default: mongoose } = require("mongoose");
 
 const Project = require("../models/Project");
+const Client = require("../models/Client");
 
 const db = mongoose.connection;
 
@@ -42,7 +42,7 @@ const ProjectType = new GraphQLObjectType({
     client: {
       type: ClientType,
       resolve(parent, args) {
-        return DUMMY_DATA_CLIENTS.find((client) => client.id === parent.clientId);
+        return Client.findById(parent.clientId);
       },
     },
   }),
@@ -55,7 +55,7 @@ const RootQuery = new GraphQLObjectType({
       type: new GraphQLList(ClientType),
 
       resolve() {
-        return DUMMY_DATA_CLIENTS;
+        return Client.find();
       },
     },
 
@@ -68,7 +68,7 @@ const RootQuery = new GraphQLObjectType({
       },
 
       resolve(parent, args) {
-        return DUMMY_DATA_CLIENTS.find((client) => client.id === Number(args.id));
+        return Client.findById(args.id);
       },
     },
 
@@ -87,7 +87,7 @@ const RootQuery = new GraphQLObjectType({
       },
 
       resolve(parent, args) {
-        return DUMMY_DATA_PROJECTS.find((project) => project.id === Number(args.id));
+        return Project.findById(args.id);
       },
     },
   }),
@@ -101,7 +101,7 @@ const RootMutation = new GraphQLObjectType({
 
       args: {
         clientId: {
-          type: GraphQLNonNull(GraphQLID),
+          type: GraphQLNonNull(GraphQLString),
         },
         name: {
           type: GraphQLNonNull(GraphQLString),
@@ -114,15 +114,19 @@ const RootMutation = new GraphQLObjectType({
         },
       },
 
-      async resolve(_parent, args) {
-        const existingProject = await Project.find({ name: args.name }).exec();
+      async resolve(parent, args) {
+        const existingProject = (await Project.find({ name: args.name }).exec())[0];
+        const client = await Client.findById(args.clientId);
 
-        if (existingProject) {
-          throw new Error(`A project called '${args.name}' already exist, please try a different name`);
+        if (client._id.equals(existingProject?.clientId)) {
+          throw new Error(
+            `A project called '${args.name}' already exist for ${client.name}, please try a different name`
+          );
         }
 
-        const data = Project.create(args);
-        return data;
+        const data = await Project.create(args);
+
+        return { ...data };
       },
     },
 
@@ -166,7 +170,6 @@ const RootMutation = new GraphQLObjectType({
       },
 
       async resolve(_parent, args) {
-        console.log(args);
         const existingProject = await Project.find({ name: args.name }).exec();
 
         if (existingProject?.length) {
