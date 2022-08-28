@@ -1,5 +1,5 @@
 const { GraphQLObjectType, GraphQLID, GraphQLString, GraphQLSchema, GraphQLList, GraphQLNonNull } = require("graphql");
-const { default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 
 const Project = require("../models/Project");
 const Client = require("../models/Client");
@@ -41,9 +41,9 @@ const ProjectType = new GraphQLObjectType({
     },
     client: {
       type: ClientType,
-      resolve(parent, args) {
-        return Client.findById(parent.clientId);
-      },
+      // resolve(parent, args) {
+      //   return Client.findById(parent.clientId);
+      // },
     },
   }),
 });
@@ -75,8 +75,12 @@ const RootQuery = new GraphQLObjectType({
     projects: {
       type: new GraphQLList(ProjectType),
 
-      resolve() {
-        return Project.find();
+      async resolve() {
+        const response = await Project.find().populate("client").exec();
+
+        // console.log(response[0]);
+
+        return response;
       },
     },
 
@@ -115,20 +119,31 @@ const RootMutation = new GraphQLObjectType({
       },
 
       async resolve(parent, args) {
-        const existingProject = await Project.find({ name: args.name }).exec();
-        const client = await Client.findById(args.clientId);
+        try {
+          const existingProject = await Project.find({ name: args.name });
+          const client = await Client.findById(args.clientId);
 
-        existingProject?.forEach((project) => {
-          if (project.clientId.equals(client.id)) {
-            throw new Error(
-              `A project called '${args.name}' already exist for ${client.name}, please try a different name`
-            );
-          }
-        });
+          existingProject?.forEach((project) => {
+            if (project.client.equals(client.id)) {
+              throw new Error(
+                `A project called '${args.name}' already exist for ${client.name}, please try a different name`
+              );
+            }
+          });
 
-        const data = await Project.create(args);
+          const newProject = {
+            ...args,
+            client: args.clientId,
+          };
 
-        return data;
+          const response = await Project.create(newProject);
+
+          return {
+            id: response.id,
+          };
+        } catch (err) {
+          throw new Error(err);
+        }
       },
     },
 
