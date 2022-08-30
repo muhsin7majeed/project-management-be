@@ -48,6 +48,15 @@ const ProjectType = new GraphQLObjectType({
   }),
 });
 
+const ProjectDeleteType = new GraphQLObjectType({
+  name: "ProjectDelete",
+  fields: () => ({
+    ids: {
+      type: new GraphQLList(GraphQLString),
+    },
+  }),
+});
+
 const RootQuery = new GraphQLObjectType({
   name: "RootQuery",
   fields: () => ({
@@ -147,23 +156,24 @@ const RootMutation = new GraphQLObjectType({
       },
     },
 
-    deleteProject: {
-      type: ProjectType,
+    deleteProjects: {
+      type: new GraphQLList(ProjectDeleteType),
 
       args: {
-        id: {
-          type: GraphQLNonNull(GraphQLID),
+        ids: {
+          type: new GraphQLList(GraphQLNonNull(GraphQLID)),
         },
       },
 
       async resolve(_parent, args) {
-        const project = await Project.findByIdAndDelete(args.id).exec();
+        try {
+          await Project.deleteMany({ _id: { $in: args.ids } }).exec();
 
-        if (!project) {
-          throw new Error(`Project not found`);
+          // TODO: Fix this reponse
+          return args.ids;
+        } catch (err) {
+          throw new Error(err);
         }
-
-        return project;
       },
     },
 
@@ -187,7 +197,6 @@ const RootMutation = new GraphQLObjectType({
       },
 
       async resolve(_parent, args) {
-        console.log(args);
         const existingProject = await Project.find({ name: args.name }).exec();
 
         if (existingProject?.length) {
