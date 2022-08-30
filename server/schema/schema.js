@@ -87,8 +87,6 @@ const RootQuery = new GraphQLObjectType({
       async resolve() {
         const response = await Project.find().populate("client").exec();
 
-        // console.log(response[0]);
-
         return response;
       },
     },
@@ -99,8 +97,14 @@ const RootQuery = new GraphQLObjectType({
         id: { type: GraphQLID },
       },
 
-      resolve(parent, args) {
-        return Project.findById(args.id);
+      async resolve(parent, args) {
+        try {
+          const response = await Project.findById(args.id).populate("client");
+
+          return response;
+        } catch (err) {
+          throw new Error(err);
+        }
       },
     },
   }),
